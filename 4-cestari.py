@@ -1,3 +1,4 @@
+import json
 from base64 import b64decode
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
@@ -6,19 +7,18 @@ from Crypto.Hash import SHAKE128
 from Crypto.Signature import eddsa
 from Crypto.Protocol.DH import key_agreement
 from getpass import getpass
-import json
+
 
 #
-# CUSTOM ERROR
+# CUSTOM ERRORS
 #
 class DSSEncError(Exception):
     '''General error executing DSS Encryption script'''
 
 class ReadProcessingError(DSSEncError):
     '''Error preprocessing data read from file'''
-
+# this is pubkey of the server it implements autentication of the server
 ca_pk = '-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAw7LeJPefPraYOphyfgQio1JsjdV1E+kdYxehGslK4Ws=\n-----END PUBLIC KEY-----'
-
 #
 # VALIDATION FUNCTION
 #
@@ -128,7 +128,7 @@ def encrypt_sync(key):
     # Ask the user for the path of the binary file to be encrypted
     settings = {
     'subject': 'plain text',
-    'error': 'Error while reading the plain text file',
+    'error': 'Error while reading plain text file',
     }
     plain_text, _ = read_file(**settings)
     cipher = AES.new(key, AES.MODE_OCB)
@@ -165,7 +165,7 @@ def decrypt_sync(message, key):
 #   - False if the password is used to unwrap the secret key
 def get_pwd(generate):
     # Request made to the user
-    prompt="Insert the password: "
+    prompt="Insert password: "
     while True:
             # Prompting the user
             password = getpass(prompt)
@@ -195,7 +195,7 @@ def gen_key():
 def gen_cert():
     sk, pk = gen_key()
     cert = {
-        'id':'Compito4Robol',
+        'id':'StefanoCestari',
         'pubk': pk.export_key(format='PEM'),
         'sig':''
     }
@@ -233,24 +233,27 @@ def ver_sig(msg, sig, pub_key):
         print(e)
         raise DSSEncError('Invalid signature!')
 
+
+#function advanced to read the certificate 
+
 def read_cert():
     while True:
         settings = {
         'subject': "certificate",
         'error': 'Error while reading the certificate file',
-        'process': import_cert("Robol.cert")
+        'process': import_cert
         }
         # Read the certificate and use import_cert to get an object
-        cert, _ = read_file(**settings)
+        certificate, _ = read_file(**settings)
         # Concatenate the id with the key and convert them into bits
-        id_pubk =(cert[0]+cert[1]).encode('utf-8')
-        sig = cert[2]
+        id_pubk =(certificate[0]+certificate[1]).encode('utf-8')
+        sig = certificate[2]
         # Import the public key of the CA
         ca_ECC_pk = ECC.import_key(ca_pk)
         try:
             # Verify the certificate and return the pk
             ver_sig(id_pubk, sig, ca_ECC_pk)
-            return ECC.import_key(cert[1])
+            return ECC.import_key(certificate[1])
         except DSSEncError:
             # Otherwise, inform the user and ask if they want to abort
             print("Error during certificate validation, try with another certificate or get it validated by the CA")
@@ -308,7 +311,7 @@ def encrypt():
     # Prepare file content by combining exported ephemeral key and ciphertext
     file_content = pke.export_key(format='PEM').encode("utf-8") + ciphertext 
     # Write the encrypted content to a specified path
-    print(write_file("Enter the path to save the cipher text: ", file_content)) 
+    print(write_file("Enter path/name for cipher text file: ", file_content)) 
 
 
 
@@ -316,15 +319,15 @@ def decrypt():
     # pke len --> 112
     settings = {
         'subject': "encrypted ",
-        'error': 'Error while reading the encrypted file',
+        'error': 'Error importing encrypted file',
         'process': ver_public_key
     }
     obj, _ = read_file(**settings)
     pke, ciphertext = obj
-    # Obtain the secret key 
+    # getting the
     settings = {
         'subject': "secret key ",
-        'error': 'Error while reading the secret key',
+        'error': 'Error During the read of the secret key',
         'process': ver_secret_key
     }
     # Read the content of the encrypted file
