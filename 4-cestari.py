@@ -159,17 +159,15 @@ def decrypt_sync(message, key):
             err_msg += '\nPlease try again'
             raise DSSEncError(err_msg)
 
-# Function that asks the user to enter a password
-# - generate: boolean variable 
-#   - True if the password is used to wrap the secret key
-#   - False if the password is used to unwrap the secret key
+# Function passord
+# - Boolean to chek the key
 def get_pwd(generate):
     # Request made to the user
     prompt="Insert password: "
     while True:
-            # Prompting the user
+            # Prompt
             password = getpass(prompt)
-            # If the password is longer than 8 characters or not generate the RSA key
+            # Check the pwd length minimum 8 
             if len(password) >= 8 or not generate:
                 # Return the password
                 break
@@ -185,7 +183,7 @@ def get_pwd(generate):
     return password
 
 #
-# GENERATE CERTIFICATE AND KEY
+# Generating cert, key
 #
 def gen_key():
     sk = ECC.generate(curve='Ed25519')
@@ -213,7 +211,7 @@ def gen_cert():
 
 
 #
-# READ AND VERIFY THE CERTIFICATE AND KEY
+# Read and verify cert, key
 #
 
 # Function that verifies a signature
@@ -234,7 +232,7 @@ def ver_sig(msg, sig, pub_key):
         raise DSSEncError('Invalid signature!')
 
 
-#function advanced to read the certificate 
+#function modified to verify cert
 
 def read_cert():
     while True:
@@ -291,32 +289,31 @@ def ver_public_key(key):
 
 
 #
-#   HASH FUNCTION
+#   Hash shake128
 #
             
 def kdf(value):
         return SHAKE128.new(value).read(16)
 
 #
-#   MAIN METHODS
+#  Core funtions
 #
 
 def encrypt():
-    pk = read_cert()  # Obtain the public key from a certificate
-    # generate ephemeral keys
+    pk = read_cert()  # Pub key in teh certificate loaded
+    # ephimeral keys
     ske, pke = gen_key() 
-    # use Diffie-Hellman to derive the key for synchronous encryption
+    # Diffie hellman
     session_key = key_agreement(static_priv=ske, static_pub=pk, kdf=kdf)
-    ciphertext = encrypt_sync(session_key)  # Encrypt data using the derived session key
-    # Prepare file content by combining exported ephemeral key and ciphertext
-    file_content = pke.export_key(format='PEM').encode("utf-8") + ciphertext 
-    # Write the encrypted content to a specified path
+    ct = encrypt_sync(session_key)  # Encrypt with session keys
+    # Preparing file.PEM
+    file_content = pke.export_key(format='PEM').encode("utf-8") + ct 
+    # Writing  CT to a specific pat
     print(write_file("Enter path/name for cipher text file: ", file_content)) 
 
 
 
 def decrypt():
-    # pke len --> 112
     settings = {
         'subject': "encrypted ",
         'error': 'Error importing encrypted file',
@@ -324,24 +321,24 @@ def decrypt():
     }
     obj, _ = read_file(**settings)
     pke, ciphertext = obj
-    # getting the
+    #
     settings = {
         'subject': "secret key ",
         'error': 'Error During the read of the secret key',
         'process': ver_secret_key
     }
-    # Read the content of the encrypted file
+    # Content of Enc File
     sk, _ = read_file(**settings)
-    # Perform key agreement using Diffie-Hellman
+    # key agreement DH
     session_key = key_agreement(static_priv=sk, static_pub=pke, kdf=kdf) 
-    # Decrypt the ciphertext using the derived session key 
+    # Decrypt CT
     plaintext = decrypt_sync(ciphertext, session_key)  
-    # Write the decrypted plaintext to a specified path
+    # Write  decrypted PT
     print(write_file("Enter the path to save the plain text: ", plaintext))  
 
 
 #
-# MAIN LOOP
+# Main
 #
 
 prompt = '''What do you want to do?
