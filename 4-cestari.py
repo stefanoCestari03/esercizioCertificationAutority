@@ -263,7 +263,7 @@ def read_cert():
                 raise DSSEncError()
 
 def ver_secret_key(key):
-    pwd = getpass("Iserisci la password: ")
+    pwd = getpass("Insert password: ")
     try:
         sk = ECC.import_key(key, pwd)
         print(sk)
@@ -283,10 +283,10 @@ def ver_public_key(key):
         try:
             return ECC.import_key(key[:112]), key[112:]
         except(ValueError, IndexError, TypeError):
-            err_msg ='Il file dato in input non contine una chiave valida, provare con un altro file'
+            err_msg ='File selected does not contain a valid key'
             raise ReadProcessingError(err_msg)
     else:
-        err_msg ='Il file dato in input non contine un messaggio cifrato, provare con un altro file'
+        err_msg ='File not ciphered try another file'
         raise ReadProcessingError(err_msg)
 
 
@@ -294,8 +294,8 @@ def ver_public_key(key):
 #   HASH FUNCTION
 #
             
-def kdf(x):
-        return SHAKE128.new(x).read(16)
+def kdf(value):
+        return SHAKE128.new(value).read(16)
 
 #
 #   MAIN METHODS
@@ -345,12 +345,12 @@ def decrypt():
 #
 
 prompt = '''What do you want to do?
-1) Encrypt
-2) Decrypt
-3) Generate the certificate
+1) Encrypt file
+2) Decrypt file
+3) Generate the certificate 
 0) Quit
 '''
-prompt_pwd="Insert the password: "
+prompt_pwd="Insert assword: "
 while True:
     choice = input(prompt)
     try:
