@@ -136,7 +136,7 @@ def encrypt_sync(key):
     ciphertext, tag = cipher.encrypt_and_digest(plain_text)
     nonce = cipher.nonce
     # Concatenate tag, nonce, and ciphertext to form the encrypted result
-    result = tag + nonce + ciphertext
+    result = nonce + tag + ciphertext
     return result
 
 # Function to symmetrically decrypt the message
@@ -144,8 +144,8 @@ def encrypt_sync(key):
 # - key: contains the key which was used to encrypt
 def decrypt_sync(message, key):
     # Extract components from the binary data
-    tag = message[:16]
-    nonce = message[16:31]
+    nonce = message[:15]
+    tag = message[15:31]
     ciphertext = message[31:]
     # Initialize decryption cipher
     cipher_dec = AES.new(key, AES.MODE_OCB, nonce)
@@ -232,7 +232,7 @@ def ver_sig(msg, sig, pub_key):
         raise DSSEncError('Invalid signature!')
 
 
-#function modified to verify cert
+#function modified to verify
 
 def read_cert():
     while True:
